@@ -1,76 +1,207 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script>
-const search = document.getElementById("search");
-const results = document.getElementById("results");
-const count = document.getElementById("count");
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My PDF Library</title>
 
-let pdfs = [];
-
-function displayResults() {
-  const query = search.value.trim().toLowerCase();
-
-  const matches = pdfs.filter(file =>
-    file.split("/").pop().toLowerCase().includes(query)
-  );
-
-  results.replaceChildren();
-  count.textContent = matches.length +
-    (matches.length === 1 ? " PDF found" : " PDFs found");
-
-  if (matches.length === 0) {
-    results.textContent = "No matching PDFs found.";
-    return;
-  }
-
-  matches.forEach(file => {
-    const item = document.createElement("div");
-    item.className = "result";
-
-    const name = document.createElement("strong");
-    name.textContent = file.split("/").pop();
-
-    const actions = document.createElement("div");
-    actions.className = "actions";
-
-    const url = file.split("/").map(encodeURIComponent).join("/");
-
-    const open = document.createElement("a");
-    open.textContent = "Open PDF";
-    open.href = url;
-    open.target = "_blank";
-    open.rel = "noopener";
-
-    const download = document.createElement("a");
-    download.textContent = "Download";
-    download.href = url;
-    download.download = file.split("/").pop();
-
-    actions.append(open, download);
-    item.append(name, actions);
-    results.append(item);
-  });
-}
-
-search.addEventListener("input", displayResults);
-
-fetch("./pdf-list.json")
-  .then(response => {
-    if (!response.ok) {
-      throw new Error("PDF list not available");
+  <style>
+    * {
+      box-sizing: border-box;
     }
-    return response.json();
-  })
-  .then(files => {
-    pdfs = files;
-    displayResults();
-  })
-  .catch(() => {
-    count.textContent = "PDF list not ready.";
-    results.textContent =
-      "Please try again in a few minutes.";
-  });
-</script>
+
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 850px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f3f6fa;
+      color: #1e293b;
+    }
+
+    header {
+      background: #17365d;
+      color: white;
+      padding: 30px 20px;
+      border-radius: 12px;
+      text-align: center;
+    }
+
+    header h1 {
+      margin-top: 0;
+    }
+
+    input {
+      width: 100%;
+      padding: 15px;
+      margin-top: 15px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    #count {
+      margin: 24px 0 12px;
+      color: #475569;
+    }
+
+    .result {
+      background: white;
+      padding: 18px;
+      margin: 10px 0;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      box-shadow: 0 1px 3px #0000000d;
+    }
+
+    .filename {
+      overflow-wrap: anywhere;
+    }
+
+    .actions {
+      display: flex;
+      gap: 14px;
+    }
+
+    a {
+      color: #1d4ed8;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    #message {
+      background: white;
+      padding: 18px;
+      border-radius: 8px;
+      overflow-wrap: anywhere;
+    }
+
+    @media (max-width: 500px) {
+      body {
+        margin: 10px auto;
+        padding: 12px;
+      }
+
+      .result {
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>My PDF Library</h1>
+    <p>Search documents by name, place or keyword</p>
+
+    <input
+      id="search"
+      type="search"
+      placeholder="Type a name or keyword..."
+      aria-label="Search PDF filenames"
+    >
+  </header>
+
+  <p id="count" aria-live="polite">Loading PDF list...</p>
+  <div id="results"></div>
+  <p id="message" hidden></p>
+
+  <script>
+    const search = document.getElementById("search");
+    const results = document.getElementById("results");
+    const count = document.getElementById("count");
+    const message = document.getElementById("message");
+
+    let pdfs = [];
+
+    function displayResults() {
+      const query = search.value.trim().toLowerCase();
+
+      const matches = pdfs.filter(file =>
+        file.split("/").pop().toLowerCase().includes(query)
+      );
+
+      results.replaceChildren();
+      message.hidden = true;
+
+      count.textContent = matches.length +
+        (matches.length === 1 ? " PDF found" : " PDFs found");
+
+      if (matches.length === 0) {
+        message.textContent = pdfs.length === 0
+          ? "No PDFs are listed yet. Upload PDFs into the pdfs folder and check the automatic list."
+          : "No matching PDFs found. Try another keyword.";
+        message.hidden = false;
+        return;
+      }
+
+      matches.forEach(file => {
+        const item = document.createElement("div");
+        item.className = "result";
+
+        const name = document.createElement("strong");
+        name.className = "filename";
+        name.textContent = file.split("/").pop();
+
+        const actions = document.createElement("div");
+        actions.className = "actions";
+
+        const url = "pdfs/" + file.split("/")
+          .map(encodeURIComponent).join("/");
+
+        const open = document.createElement("a");
+        open.textContent = "Open PDF";
+        open.href = url;
+        open.target = "_blank";
+        open.rel = "noopener";
+
+        const download = document.createElement("a");
+        download.textContent = "Download";
+        download.href = url;
+        download.download = file.split("/").pop();
+
+        actions.append(open, download);
+        item.append(name, actions);
+        results.append(item);
+      });
+    }
+
+    search.addEventListener("input", displayResults);
+
+    fetch("./pdf-list.json")
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("The PDF list file was not found.");
+        }
+        return response.json();
+      })
+      .then(files => {
+        if (!Array.isArray(files)) {
+          throw new Error("The PDF list has an invalid format.");
+        }
+
+        pdfs = files.filter(file =>
+          typeof file === "string" &&
+          file.toLowerCase().endsWith(".pdf")
+        );
+
+        displayResults();
+      })
+      .catch(error => {
+        count.textContent = "Could not load the PDF list.";
+        message.textContent =
+          error.message +
+          " Check that pdf-list.json exists in the repository's main folder and contains a JSON list of PDF paths.";
+        message.hidden = false;
+      });
+  </script>
 </body>
 </html>
