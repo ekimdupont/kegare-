@@ -1,87 +1,23 @@
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>My PDF Library</title>
-<style>
-body {
-  font-family: Arial, sans-serif;
-  max-width: 800px;
-  margin: 40px auto;
-  padding: 20px;
-  background: #f3f6fa;
-  color: #1e293b;
-}
-header {
-  background: #17365d;
-  color: white;
-  padding: 28px;
-  border-radius: 12px;
-  text-align: center;
-}
-input {
-  box-sizing: border-box;
-  width: 100%;
-  padding: 14px;
-  margin-top: 16px;
-  border: 0;
-  border-radius: 8px;
-  font-size: 16px;
-}
-#count { color: #64748b; margin-top: 24px; }
-.result {
-  background: white;
-  padding: 16px;
-  margin: 10px 0;
-  border-radius: 8px;
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-a { color: #1d4ed8; text-decoration: none; }
-a:hover { text-decoration: underline; }
-.actions { display: flex; gap: 14px; }
-</style>
-</head>
-<body>
-
-<header>
-  <h1>My PDF Library</h1>
-  <p>Search documents by name, place or keyword</p>
-  <input id="search" type="search"
-    placeholder="Type a name or keyword..."
-    aria-label="Search PDF files">
-</header>
-
-<p id="count" aria-live="polite"></p>
-<div id="results"></div>
-
 <script>
-// Add the exact filenames of your PDFs here.
-const pdfs = [
-  "Paris_History.pdf",
-  "John_Smith_Records.pdf",
-  "Archive_Report_2025.pdf"
-];
-
 const search = document.getElementById("search");
 const results = document.getElementById("results");
 const count = document.getElementById("count");
 
+let pdfs = [];
+
 function displayResults() {
   const query = search.value.trim().toLowerCase();
+
   const matches = pdfs.filter(file =>
-    file.toLowerCase().includes(query)
+    file.split("/").pop().toLowerCase().includes(query)
   );
 
   results.replaceChildren();
   count.textContent = matches.length +
     (matches.length === 1 ? " PDF found" : " PDFs found");
 
-  if (!matches.length) {
+  if (matches.length === 0) {
     results.textContent = "No matching PDFs found.";
     return;
   }
@@ -91,21 +27,23 @@ function displayResults() {
     item.className = "result";
 
     const name = document.createElement("strong");
-    name.textContent = file;
+    name.textContent = file.split("/").pop();
 
     const actions = document.createElement("div");
     actions.className = "actions";
 
+    const url = file.split("/").map(encodeURIComponent).join("/");
+
     const open = document.createElement("a");
     open.textContent = "Open PDF";
-    open.href = "pdfs/" + encodeURIComponent(file);
+    open.href = url;
     open.target = "_blank";
     open.rel = "noopener";
 
     const download = document.createElement("a");
     download.textContent = "Download";
-    download.href = open.href;
-    download.download = file;
+    download.href = url;
+    download.download = file.split("/").pop();
 
     actions.append(open, download);
     item.append(name, actions);
@@ -114,8 +52,21 @@ function displayResults() {
 }
 
 search.addEventListener("input", displayResults);
-displayResults();
-</script>
 
-</body>
-</html>
+fetch("./pdf-list.json")
+  .then(response => {
+    if (!response.ok) {
+      throw new Error("PDF list not available");
+    }
+    return response.json();
+  })
+  .then(files => {
+    pdfs = files;
+    displayResults();
+  })
+  .catch(() => {
+    count.textContent = "PDF list not ready.";
+    results.textContent =
+      "Please try again in a few minutes.";
+  });
+</script>
