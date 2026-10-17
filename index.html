@@ -154,8 +154,8 @@
         const actions = document.createElement("div");
         actions.className = "actions";
 
-        const url = "pdfs/" + file.split("/")
-          .map(encodeURIComponent).join("/");
+        const url = file.split("/")
+  .map(encodeURIComponent).join("/");
 
         const open = document.createElement("a");
         open.textContent = "Open PDF";
