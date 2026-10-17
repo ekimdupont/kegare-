@@ -4,7 +4,7 @@ name: Automatically update PDF list
 on:
   push:
     paths:
-      - 'pdfs/**'
+      - 'pdf/**'
       - '.github/workflows/generate-pdf-list.yml'
   workflow_dispatch:
 
@@ -25,7 +25,7 @@ jobs:
           import json
           from pathlib import Path
 
-          folder = Path("pdfs")
+          folder = Path("pdf")
           files = []
 
           if folder.exists():
